@@ -1,0 +1,71 @@
+---
+- name: Simple Perf Test 
+  hosts: localhost
+  connection: local
+  
+  vars:
+    api: "https://localhost/k8s/clusters/local"
+    token: "kubeconfig-user-59tkz:ph27qrvmbqj5dxndghpwgrzptcw2m2l9xbvbpksdlx2l2sj55s8xmd"
+    pod_cnt: 50 
+
+  tasks:
+  - name: Create a k8s namespace for test
+    community.kubernetes.k8s:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      name: "test-xyz"
+      api_version: v1
+      kind: Namespace
+      state: present 
+    register: ns
+
+  - name: Start Pod to Load image
+    community.kubernetes.k8s:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      state: present
+      template: pod-single.j2
+      wait: true
+    when: ns.changed
+
+  - name: Stop Pod to Load image
+    community.kubernetes.k8s:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      state: absent 
+      template: pod-single.j2
+      wait: true
+    when: ns.changed
+
+  - name: Start "{{ pod_cnt }}" pods 
+    community.kubernetes.k8s:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      state: present
+      template: pod.j2
+      wait: false
+    register: pod_start 
+
+  - pause:
+      seconds: 50
+    when: pod_start.changed
+
+  - name: Search for all Pods labelled app=web
+    community.kubernetes.k8s_info:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      namespace: test-xyz
+      kind: Pod
+      label_selectors:
+        - perf-test = true
+    register: pod_info
+
+  - name: print result info
+    template:
+      src: pod_result.j2
+      dest: results.csv 

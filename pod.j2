@@ -1,0 +1,16 @@
+{% for x in range(0, pod_cnt) %}
+---
+apiVersion: v1
+kind: Pod    
+metadata:   
+  name: test-pod-{{ x }}
+  namespace: test-xyz
+  labels: 
+    perf-test: "true"
+spec:           
+  containers:
+  - name: webserver 
+    image: nginx:latest
+    ports:            
+    - containerPort: 80
+{% endfor %}

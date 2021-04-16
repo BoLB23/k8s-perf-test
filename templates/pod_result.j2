@@ -1,0 +1,4 @@
+JOB_NAME,POD_NAME,INITIALIZED,SCHEDULED,READY,CONTAINERREADY
+{% for pod in pod_info.resources %}
+{{ cluster_name}}-{{ ansible_date_time.date }},{{ pod.metadata.name }},{{ pod.status.conditions|json_query('[?type == `Initialized`].lastTransitionTime') }},{{ pod.status.conditions|json_query('[?type == `PodScheduled`].lastTransitionTime') }},{{ pod.status.conditions|json_query('[?type == `Ready`].lastTransitionTime') }},{{ pod.status.conditions|json_query('[?type == `ContainersReady`].lastTransitionTime') }}
+{% endfor %}

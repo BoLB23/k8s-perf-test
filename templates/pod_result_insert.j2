@@ -1,0 +1,6 @@
+INSERT INTO podtest(job_name, pod_name, initialized, scheduled, ready, containerready)
+VALUES
+{% for pod in pod_info.resources %}
+('{{ cluster_name}}-{{ ansible_date_time.date }}','{{ pod.metadata.name }}',{{ pod.status.conditions|json_query('[?type == `Initialized`].lastTransitionTime') | replace('[', '') | replace(']', '')| default('2000-00-00T00:00:00Z')}},{{ pod.status.conditions|json_query('[?type == `PodScheduled`].lastTransitionTime')| replace('[', '') | replace(']', '') | default('2000-00-00T00:00:00Z')}},{{ pod.status.conditions|json_query('[?type == `Ready`].lastTransitionTime') | replace('[', '') | replace(']', '')| default('2000-00-00T00:00:00Z')}},{{ pod.status.conditions|json_query('[?type == `ContainersReady`].lastTransitionTime') | replace('[', '') | replace(']', '')| default('2000-00-00T00:00:00Z')}}){%- if loop.last %};{% else %},{% endif %}
+
+{% endfor %}

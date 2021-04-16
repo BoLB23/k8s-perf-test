@@ -2,11 +2,22 @@
 - name: Simple Perf Test 
   hosts: localhost
   connection: local
-  
+  #  gather_facts: false
+
   vars:
-    api: "https://localhost/k8s/clusters/local"
-    token: "kubeconfig-user-59tkz:ph27qrvmbqj5dxndghpwgrzptcw2m2l9xbvbpksdlx2l2sj55s8xmd"
-    pod_cnt: 50 
+    api: ""
+    token: ""
+    test_image: "nginx:latest" 
+    cluster_name: ""
+    pod_test:
+      enabled: true
+      pod_cnt: 50 
+    pg:
+      host: localhost
+      port: 5432
+      db: postgres 
+      user: 
+      pass: 
 
   tasks:
   - name: Create a k8s namespace for test
@@ -51,10 +62,10 @@
     register: pod_start 
 
   - pause:
-      seconds: 50
+      seconds: 60
     when: pod_start.changed
 
-  - name: Search for all Pods labelled app=web
+  - name: Search for all Pods 
     community.kubernetes.k8s_info:
       validate_certs: no 
       host: "{{ api }}"
@@ -67,5 +78,17 @@
 
   - name: print result info
     template:
-      src: pod_result.j2
-      dest: results.csv 
+      src: pod_result_insert.j2 
+      dest: /tmp/results.csv 
+
+  - name: Insert Results to postgres DB 
+    community.postgresql.postgresql_query:
+      db: "{{ pg.db }}" 
+      login_host: "{{ pg.host }}"
+      login_port: "{{ pg.port }}" 
+      login_user: "{{ pg.user }}" 
+      login_password: "{{ pg.pass }}"
+      path_to_script: results.sql
+      as_single_query: true
+      search_path:
+        - perftest

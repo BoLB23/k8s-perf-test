@@ -1,4 +1,4 @@
-{% for x in range(0, pod_cnt) %}
+{% for x in range(0, pod_test.pod_cnt) %}
 ---
 apiVersion: v1
 kind: Pod    
@@ -10,7 +10,9 @@ metadata:
 spec:           
   containers:
   - name: webserver 
-    image: nginx:latest
+    image: {{ test_image }}
+    command: ["sleep"]
+    args: ["infinity"]
     ports:            
     - containerPort: 80
 {% endfor %}

@@ -1,0 +1,57 @@
+---
+- name: Simple Perf Test 
+  hosts: localhost
+  connection: local
+
+  vars:
+    api: ""
+    token: ""
+    test_image: "nginx:latest"
+    cluster_name: ""
+    pod_test:
+      enabled: true
+      pod_cnt: 50 
+    pg:
+      host: localhost
+      port: 5432
+      db: postgres 
+      user: 
+      pass: 
+
+  tasks:
+  - name: Search for all Pods 
+    community.kubernetes.k8s_info:
+      validate_certs: no 
+      host: "{{ api }}"
+      api_key: "{{ token }}"
+      kind: Pod
+    register: pod_info
+
+  - name: template sql
+    template:
+      src: pod_result_insert.j2 
+      dest: results.sql 
+
+  - name: replace blank dates 
+    replace:
+      path: results.sql  
+      regexp: ',,'
+      replace: ",'2000-00-00T00:00:00Z',"
+
+  - name: replace EOL comma 
+    replace:
+      path: results.sql  
+      regexp: ',\),'
+      replace: '),' 
+
+  - name: Insert Results to postgres DB 
+    community.postgresql.postgresql_query:
+      db: "{{ pg.db }}" 
+      login_host: "{{ pg.host }}"
+      login_port: "{{ pg.port }}" 
+      login_user: "{{ pg.user }}" 
+      login_password: "{{ pg.pass }}" 
+      path_to_script: results.sql
+      as_single_query: true
+      search_path:
+        - perftest
